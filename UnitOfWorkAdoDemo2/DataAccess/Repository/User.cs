@@ -1,0 +1,11 @@
+﻿namespace UnitOfWorkAdoDemo2.DataAccess.Repository
+{
+    public class User
+    {
+        public int Id { get; set; }
+
+        public string FirstName { get; set; }
+
+        public string LastName { get; set; }
+    }
+}
