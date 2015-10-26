@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Data;
 
 namespace UnitOfWorkAdoDemo2.DataAccess
 {
     public interface IUnitOfWork : IDisposable
     {
-        void Complete();
+        IDbConnection Connection { get; }
+
+        void Commit();
     }
 }

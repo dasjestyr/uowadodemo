@@ -9,13 +9,16 @@ namespace UnitOfWorkAdoDemo2
     class Program
     {
         private const string ConnectionString = "Data Source = uowdemo.s3db";
+        private static MyApplicationAdoUow _unitOfWork;
 
         static void Main(string[] args)
         {
+            _unitOfWork = GetUow();
+
             ShowDatabase();
 
             var input = string.Empty;
-            while (!input.Equals("6", StringComparison.InvariantCulture))
+            while (!input.Equals("5", StringComparison.InvariantCulture))
             {
                 ShowMenu();
                 input = Console.ReadLine();
@@ -32,15 +35,17 @@ namespace UnitOfWorkAdoDemo2
                         DeleteUser();
                         break;
                     case "4":
-                        AddDelAddAddWithCommit();
-                        break;
-                    case "5":
-                        AddDelAddAddNoCommit();
+                        CommitChanges();
                         break;
                     default:
                         break;
                 }
             }
+        }
+
+        private static void CommitChanges()
+        {
+            _unitOfWork.Commit();
         }
 
         static void ShowMenu()
@@ -49,23 +54,19 @@ namespace UnitOfWorkAdoDemo2
             Console.WriteLine("1. Show users currently in the database");
             Console.WriteLine("2. Add a new user to the database");
             Console.WriteLine("3. Delete a user from the database");
-            Console.WriteLine("4. Add > Delete > Add > Add and Commit");
-            Console.WriteLine("5. Add > Delete > Add > Add and NOT commit");
-            Console.WriteLine("6. Quit");
+            Console.WriteLine("4. Commit Changes");
+            Console.WriteLine("5. Quit");
             Console.WriteLine();
             Console.WriteLine("What would you like to do?");
         }
 
         static void ShowDatabase()
         {
-            using (var uow = GetUow())
+            var users = _unitOfWork.Users.GetAll().ToList();
+            Console.WriteLine($"******* Here are the {users.Count} users currently in the database *******");
+            foreach (var user in users)
             {
-                var users = uow.Users.GetAll().ToList();
-                Console.WriteLine($"******* Here are the {users.Count} users currently in the database *******");
-                foreach (var user in users)
-                {
-                    Console.WriteLine($"{user.FirstName} {user.LastName}");
-                }
+                Console.WriteLine($"{user.FirstName} {user.LastName}");
             }
         }
 
@@ -77,12 +78,8 @@ namespace UnitOfWorkAdoDemo2
             Console.Write("Last Name: ");
             var lastName = Console.ReadLine();
             
-            using (var uow = GetUow())
-            {
-                var user = new User {FirstName = firstName, LastName = lastName};
-                uow.Users.Add(user);
-                uow.Complete();
-            }
+            var user = new User {FirstName = firstName, LastName = lastName};
+            _unitOfWork.Users.Add(user);
         }
 
         static void DeleteUser()
@@ -92,42 +89,9 @@ namespace UnitOfWorkAdoDemo2
             var firstName = Console.ReadLine();
             Console.Write("Last Name: ");
             var lastName = Console.ReadLine();
-
-            using (var uow = GetUow())
-            {
-                var user = new User {FirstName = firstName, LastName = lastName};
-                uow.Users.Remove(user);
-                uow.Complete();
-            }
-        }
-
-        static void AddDelAddAddNoCommit()
-        {
-            var user1 = new User {FirstName = "Dummy User 1", LastName = "Scenario 2"};
-            var user2 = new User { FirstName = "Dummy User 2", LastName = "Scenario 2" };
-
-            using (var uow = GetUow())
-            {
-                uow.Users.Add(user1);
-                uow.Users.Remove(user1);
-                uow.Users.Add(user1);
-                uow.Users.Add(user2);
-            }
-        }
-
-        static void AddDelAddAddWithCommit()
-        {
-            var user1 = new User { FirstName = "Dummy User 1", LastName = "Scenario 1" };
-            var user2 = new User { FirstName = "Dummy User 2", LastName = "Scenario 1" };
-
-            using (var uow = GetUow())
-            {
-                uow.Users.Add(user1);
-                uow.Users.Remove(user1);
-                uow.Users.Add(user1);
-                uow.Users.Add(user2);
-                uow.Complete();
-            }
+            
+            var user = new User {FirstName = firstName, LastName = lastName};
+            _unitOfWork.Users.Remove(user);
         }
 
         static MyApplicationAdoUow GetUow()

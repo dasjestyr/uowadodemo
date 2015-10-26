@@ -3,22 +3,29 @@ using UnitOfWorkAdoDemo2.DataAccess.Repository;
 
 namespace UnitOfWorkAdoDemo2.DataAccess.DataSource
 {
-    public class FindUserSource : AdoQuerySource<object, User>
+    public class FindUserSource : AdoQuerySource<User>
     {
+        private readonly int _userId;
+
         public FindUserSource(IAdoUnitOfWork unitOfWork, int userId) 
             : base(unitOfWork)
         {
-            CommandText = $"SELECT * FROM Users WHERE ID = {userId}";
+            _userId = userId;
         }
 
         protected override User GetFromReader(IDataRecord rdr)
         {
             return new User
             {
-                Id = (int)rdr["ID"],
-                FirstName = rdr["FirstName"] as string,
-                LastName = rdr["LastName"] as string
+                Id = rdr.GetInt32(2),
+                FirstName = rdr.GetString(0),
+                LastName = rdr.GetString(1)
             };
+        }
+
+        protected override string GetCommandText()
+        {
+            return $"SELECT * FROM Users WHERE ID = {_userId}";
         }
     }
 }

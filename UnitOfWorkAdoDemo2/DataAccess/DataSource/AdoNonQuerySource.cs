@@ -3,30 +3,26 @@ using System.Diagnostics;
 
 namespace UnitOfWorkAdoDemo2.DataAccess.DataSource
 {
-    public abstract class AdoNonQuerySource<TInput>
+    public abstract class AdoNonQuerySource
     {
-        protected readonly IAdoUnitOfWork UnitOfWork;
         private readonly IDbCommand _command;
-
-        protected string CommandText
-        {
-            get { return _command.CommandText; }
-            set { _command.CommandText = value; }
-        }
 
         protected AdoNonQuerySource(IAdoUnitOfWork unitOfWork)
         {
-            UnitOfWork = unitOfWork;
-            _command = UnitOfWork.CreateCommand();
+            _command = unitOfWork.CreateCommand();
             _command.CommandType = CommandType.Text;
         }
 
-        public IDataParameterCollection Execute(TInput input)
+        public IDataParameterCollection Execute()
         {
+            _command.CommandText = GetCommand();
+
             if (_command.ExecuteNonQuery() == 0)
                 Trace.WriteLine("No operation was performed!");
-
+            
             return _command.Parameters;
         }
+
+        protected abstract string GetCommand();
     }
 }

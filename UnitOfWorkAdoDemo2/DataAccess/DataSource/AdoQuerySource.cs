@@ -1,41 +1,43 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data;
 
 namespace UnitOfWorkAdoDemo2.DataAccess.DataSource
 {
-    public abstract class AdoQuerySource<TInput, TOutput>
+    public abstract class AdoQuerySource<TOutput> 
+        where TOutput : class
     {
-        protected readonly IAdoUnitOfWork UnitOfWWork;
-        protected readonly IDbCommand Command;
-
-        protected string CommandText
-        {
-            get { return Command.CommandText; }
-            set { Command.CommandText = value; }
-        }
-
+        private readonly IAdoUnitOfWork _unitOfWork;
+        private readonly IDbCommand _command;
+        
         protected AdoQuerySource(IAdoUnitOfWork unitOfWork)
         {
-            UnitOfWWork = unitOfWork;
-            Command = UnitOfWWork.CreateCommand();
-            Command.CommandType = CommandType.Text;
+            _unitOfWork = unitOfWork;
+            _command = _unitOfWork.CreateCommand();
+            _command.CommandType = CommandType.Text;
         }
 
-        public IEnumerable<TOutput> Execute(TInput input)
+        public IEnumerable<TOutput> Execute()
         {
+            if(_unitOfWork.Connection.State != ConnectionState.Open)
+                _unitOfWork.Connection.Open();
 
-            using (var rdr = Command.ExecuteReader())
+            _command.CommandText = GetCommandText();
+            
+            using (var rdr = _command.ExecuteReader(CommandBehavior.CloseConnection))
             {
                 var items = new List<TOutput>();
                 while (rdr.Read())
                 {
                     items.Add(GetFromReader(rdr));
                 }
-
+                
                 return items;
             }
         }
 
         protected abstract TOutput GetFromReader(IDataRecord rdr);
+
+        protected abstract string GetCommandText();
     }
 }
